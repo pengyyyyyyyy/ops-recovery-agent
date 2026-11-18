@@ -1,0 +1,8 @@
+.git
+.env
+.env.*
+.venv
+.state
+data
+reports
+__pycache__

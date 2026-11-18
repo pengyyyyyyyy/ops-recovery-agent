@@ -1,0 +1,403 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ops Recovery Agent — 实测评测</title><style>body{margin:0;background:#f5f5ef;color:#20312b;font:15px/1.7 system-ui}main{max-width:1100px;margin:40px auto;padding:24px}h1{font-size:34px}section{background:white;padding:24px;margin:24px 0;border:1px solid #d9dfd7;border-radius:8px}table{width:100%;border-collapse:collapse}td,th{text-align:left;padding:12px;border-bottom:1px solid #ddd}pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px}.label{color:#38634c}</style>
+<main><p class="label">真实模型 / 固定版本 / 公开盲测</p><h1>运维排障 Agent 评测</h1>
+<p>DeepSeek Flash · 3 类本地故障 + 12 个公开案例 · 3 组消融 · 各重复 2 次，共 90 次运行。</p>
+<section><h2>结果对照</h2><table><thead><tr><th>变体</th><th>本地诊断</th><th>公开 AC@1</th><th>60/40 加权</th><th>本地修复</th><th>重复修复</th><th>公开模型调用</th><th>公开平均耗时</th></tr></thead><tbody><tr><td>baseline</td><td>100.0%</td><td>75.0%</td><td>90.0%</td><td>100.0%</td><td>0</td><td>7.17</td><td>11.69s</td></tr><tr><td>reliable</td><td>100.0%</td><td>91.7%</td><td>96.7%</td><td>100.0%</td><td>0</td><td>5.33</td><td>9.08s</td></tr><tr><td>dual</td><td>100.0%</td><td>87.5%</td><td>95.0%</td><td>100.0%</td><td>0</td><td>9.00</td><td>16.15s</td></tr></tbody></table>
+<p>本地修复需要三次实际 HTTP 请求验证成功；测试审批使用明确标记的自动测试策略。公开静态数据只评诊断。</p>
+<p>小样本及同案例重复结果相关，不代表生产准确率。三组共享主机并发运行，延迟只作描述。多 Agent 是否值得其额外成本，应根据实际结果判断。</p></section>
+<section><h2>可复现协议与费用</h2><pre>{
+  &quot;protocol&quot;: {
+    &quot;approval_policy&quot;: &quot;automated-test-policy (not a human approval measurement)&quot;,
+    &quot;dataset_manifest_digest&quot;: &quot;d7cea90a48588184f2bd8af9bbf436b45d3622fbcbc18eb4db31939309baae98&quot;,
+    &quot;dataset_revision&quot;: &quot;afeacb11bcc94dadfd1c8f483ee4377b2b8b614e&quot;,
+    &quot;limitations&quot;: [
+      &quot;Small held-out sample, not a full RCAEval reproduction&quot;,
+      &quot;Run-level intervals are descriptive; repeated runs on a case are correlated&quot;,
+      &quot;Public metrics/logs only; raw traces are not imported in this release&quot;,
+      &quot;Static public replay cannot validate repair success&quot;,
+      &quot;Both roles use the same model; isolated context is not statistical independence&quot;
+    ],
+    &quot;mode&quot;: &quot;online&quot;,
+    &quot;model&quot;: &quot;deepseek-flash&quot;,
+    &quot;model_limits&quot;: {
+      &quot;max_output_tokens&quot;: 2048,
+      &quot;stage_deadline_seconds&quot;: 120.0
+    },
+    &quot;packages&quot;: {
+      &quot;httpx&quot;: &quot;0.28.1&quot;,
+      &quot;mcp&quot;: &quot;1.30.0&quot;,
+      &quot;pydantic&quot;: &quot;2.14.3&quot;,
+      &quot;smolagents&quot;: &quot;1.26.0&quot;
+    },
+    &quot;price_cny_per_million&quot;: {
+      &quot;input&quot;: 2.0,
+      &quot;output&quot;: 8.0
+    },
+    &quot;prompt_digest&quot;: &quot;a933e23f3a1d484aca0e4cd41ccf6dbae50f1d337603e8e014f410c896422283&quot;,
+    &quot;python&quot;: &quot;3.13.0&quot;,
+    &quot;repeats&quot;: 2,
+    &quot;source_digest&quot;: &quot;5a0185bf94eccf5775956e62f91941007d2071cce4ccbad42b921f9a16eded55&quot;,
+    &quot;split&quot;: &quot;test&quot;,
+    &quot;tool_fault&quot;: &quot;first query_logs request times out once in every run&quot;,
+    &quot;variants&quot;: {
+      &quot;baseline&quot;: {
+        &quot;dual&quot;: false,
+        &quot;reliable&quot;: false
+      },
+      &quot;reliable&quot;: {
+        &quot;dual&quot;: false,
+        &quot;reliable&quot;: true
+      },
+      &quot;dual&quot;: {
+        &quot;dual&quot;: true,
+        &quot;reliable&quot;: true
+      }
+    },
+    &quot;parallel_variant_processes&quot;: 3,
+    &quot;timing_caveat&quot;: &quot;Variant processes shared a host and API concurrently; latency comparisons are descriptive, not isolated performance benchmarks.&quot;
+  },
+  &quot;summary&quot;: {
+    &quot;local&quot;: {
+      &quot;baseline&quot;: {
+        &quot;n_runs&quot;: 6,
+        &quot;n_unique_cases&quot;: 3,
+        &quot;service_ac_at_1&quot;: 1.0,
+        &quot;wilson_95_run_level&quot;: [
+          0.6097,
+          1.0
+        ],
+        &quot;accepted_correct_rate&quot;: 1.0,
+        &quot;failures&quot;: 0,
+        &quot;mean_tool_attempts&quot;: 8.5,
+        &quot;mean_model_calls&quot;: 5.333333333333333,
+        &quot;mean_elapsed_seconds&quot;: 13.621500000000001,
+        &quot;review_rejection_rate&quot;: 0.0,
+        &quot;verified_repair_rate&quot;: 1.0,
+        &quot;unknown_response_recovered&quot;: 6,
+        &quot;duplicate_repair_events&quot;: 0
+      },
+      &quot;reliable&quot;: {
+        &quot;n_runs&quot;: 6,
+        &quot;n_unique_cases&quot;: 3,
+        &quot;service_ac_at_1&quot;: 1.0,
+        &quot;wilson_95_run_level&quot;: [
+          0.6097,
+          1.0
+        ],
+        &quot;accepted_correct_rate&quot;: 1.0,
+        &quot;failures&quot;: 0,
+        &quot;mean_tool_attempts&quot;: 8.833333333333334,
+        &quot;mean_model_calls&quot;: 4.833333333333333,
+        &quot;mean_elapsed_seconds&quot;: 12.994666666666667,
+        &quot;review_rejection_rate&quot;: 0.0,
+        &quot;verified_repair_rate&quot;: 1.0,
+        &quot;unknown_response_recovered&quot;: 6,
+        &quot;duplicate_repair_events&quot;: 0
+      },
+      &quot;dual&quot;: {
+        &quot;n_runs&quot;: 6,
+        &quot;n_unique_cases&quot;: 3,
+        &quot;service_ac_at_1&quot;: 1.0,
+        &quot;wilson_95_run_level&quot;: [
+          0.6097,
+          1.0
+        ],
+        &quot;accepted_correct_rate&quot;: 1.0,
+        &quot;failures&quot;: 0,
+        &quot;mean_tool_attempts&quot;: 12.833333333333334,
+        &quot;mean_model_calls&quot;: 7.833333333333333,
+        &quot;mean_elapsed_seconds&quot;: 20.010166666666667,
+        &quot;review_rejection_rate&quot;: 0.0,
+        &quot;verified_repair_rate&quot;: 1.0,
+        &quot;unknown_response_recovered&quot;: 6,
+        &quot;duplicate_repair_events&quot;: 0
+      }
+    },
+    &quot;public&quot;: {
+      &quot;baseline&quot;: {
+        &quot;n_runs&quot;: 24,
+        &quot;n_unique_cases&quot;: 12,
+        &quot;service_ac_at_1&quot;: 0.75,
+        &quot;wilson_95_run_level&quot;: [
+          0.551,
+          0.88
+        ],
+        &quot;accepted_correct_rate&quot;: 0.75,
+        &quot;failures&quot;: 4,
+        &quot;mean_tool_attempts&quot;: 8.083333333333334,
+        &quot;mean_model_calls&quot;: 7.166666666666667,
+        &quot;mean_elapsed_seconds&quot;: 11.691583333333334,
+        &quot;review_rejection_rate&quot;: 0.0
+      },
+      &quot;reliable&quot;: {
+        &quot;n_runs&quot;: 24,
+        &quot;n_unique_cases&quot;: 12,
+        &quot;service_ac_at_1&quot;: 0.9166666666666666,
+        &quot;wilson_95_run_level&quot;: [
+          0.7415,
+          0.9768
+        ],
+        &quot;accepted_correct_rate&quot;: 0.9166666666666666,
+        &quot;failures&quot;: 0,
+        &quot;mean_tool_attempts&quot;: 7.916666666666667,
+        &quot;mean_model_calls&quot;: 5.333333333333333,
+        &quot;mean_elapsed_seconds&quot;: 9.077583333333333,
+        &quot;review_rejection_rate&quot;: 0.0
+      },
+      &quot;dual&quot;: {
+        &quot;n_runs&quot;: 24,
+        &quot;n_unique_cases&quot;: 12,
+        &quot;service_ac_at_1&quot;: 0.875,
+        &quot;wilson_95_run_level&quot;: [
+          0.69,
+          0.9566
+        ],
+        &quot;accepted_correct_rate&quot;: 0.875,
+        &quot;failures&quot;: 2,
+        &quot;mean_tool_attempts&quot;: 12.875,
+        &quot;mean_model_calls&quot;: 9,
+        &quot;mean_elapsed_seconds&quot;: 16.153625,
+        &quot;review_rejection_rate&quot;: 0.0
+      }
+    },
+    &quot;weighted_diagnosis&quot;: {
+      &quot;dual&quot;: 0.95,
+      &quot;baseline&quot;: 0.9,
+      &quot;reliable&quot;: 0.9666666666666667
+    }
+  },
+  &quot;completed_runs&quot;: 90,
+  &quot;experiment_cost_ledger&quot;: {
+    &quot;settled&quot;: {
+      &quot;cny&quot;: 6.216738,
+      &quot;requests&quot;: 624
+    }
+  },
+  &quot;failed_run_ids&quot;: [
+    &quot;ea3849b1733745dcba1c099e1bc634be&quot;,
+    &quot;0e09071e1ae2440ca0d39e3963d86c34&quot;,
+    &quot;51eae7cc326d42319df2ffb3ff24c51c&quot;,
+    &quot;bc971796a3ba4d2b80167c8690ae8378&quot;,
+    &quot;91780e58764245979fb7dc898f814e16&quot;,
+    &quot;c86c5e8c21344206ab7c1f2acf316192&quot;,
+    &quot;6e78ee8447a94b12909ab0816dfa656c&quot;,
+    &quot;1e6b79f39cc24b89b047adf5082c9d44&quot;,
+    &quot;4bd945658946408995f1f9f9ab1895d3&quot;,
+    &quot;90b7d327d32c4a0e8c0a18497eaf1f26&quot;,
+    &quot;8f869ab39dfd4f5e8bb84da48b0c5d9c&quot;
+  ]
+}</pre></section>
+<section><h2>失败案例</h2><p>保留全部失败，没有依据测试结果修改提示词或只挑选成功运行。</p><pre>[
+  {
+    &quot;case&quot;: &quot;test-004&quot;,
+    &quot;variant&quot;: &quot;baseline&quot;,
+    &quot;repeat&quot;: 0,
+    &quot;expected_service&quot;: &quot;productcatalogservice&quot;,
+    &quot;prediction&quot;: {
+      &quot;action&quot;: &quot;none&quot;,
+      &quot;evidence_ids&quot;: [
+        &quot;metric-321d120852be2a98&quot;,
+        &quot;metric-55e79c28e9931d65&quot;,
+        &quot;metric-55f77a354185041b&quot;,
+        &quot;metric-6bc618e6c405656b&quot;,
+        &quot;metric-c6326ab017f7e211&quot;,
+        &quot;metric-b82cb3c3d1de9593&quot;,
+        &quot;metric-6b2b85b077460b1c&quot;,
+        &quot;metric-52b8f056db9f7728&quot;,
+        &quot;log-0000&quot;,
+        &quot;log-0002&quot;,
+        &quot;log-0001&quot;,
+        &quot;metric-6b111bd55e854ac5&quot;
+      ],
+      &quot;root_cause&quot;: &quot;mem&quot;,
+      &quot;service&quot;: &quot;recommendationservice&quot;,
+      &quot;summary&quot;: &quot;recommendationservice shows the primary resource fault: memory roughly doubled (baseline median ~46.9MB -&gt; incident median ~91.5MB, anomaly score 19) and open sockets tripled (4 -&gt; 12, anomaly score 40), accompanied by the largest latency degradation (latency-90 0.0095s -&gt; 4.52s, anomaly score 9476; latency-50 0.0071s -&gt; 1.35s). productcatalogservice also shows elevated latency (latency-90 0.0043s -&gt; 2.16s) with DeadlineExceeded trace-export errors, and frontend logs &#x27;failed to get product recommendations&#x27; with latency-90 rising 0.62s -&gt; 10.1s — these are downstream symptoms of the recommendation path. CPU and disk I/O on recommendationservice are not elevated (cpu 2.44 -&gt; 1.73, diskio 0), pointing to memory/socket resource exhaustion rather than CPU or disk. Public dataset: no remediation action taken.&quot;
+    },
+    &quot;error&quot;: null,
+    &quot;run_id&quot;: &quot;ea3849b1733745dcba1c099e1bc634be&quot;
+  },
+  {
+    &quot;case&quot;: &quot;test-004&quot;,
+    &quot;variant&quot;: &quot;baseline&quot;,
+    &quot;repeat&quot;: 1,
+    &quot;expected_service&quot;: &quot;productcatalogservice&quot;,
+    &quot;prediction&quot;: {
+      &quot;action&quot;: &quot;none&quot;,
+      &quot;evidence_ids&quot;: [
+        &quot;metric-55f77a354185041b&quot;,
+        &quot;metric-6bc618e6c405656b&quot;,
+        &quot;metric-55e79c28e9931d65&quot;,
+        &quot;metric-321d120852be2a98&quot;,
+        &quot;metric-c6326ab017f7e211&quot;,
+        &quot;metric-6b2b85b077460b1c&quot;,
+        &quot;metric-52b8f056db9f7728&quot;,
+        &quot;metric-6b111bd55e854ac5&quot;,
+        &quot;metric-f73c3dbf4321273c&quot;,
+        &quot;log-0001&quot;,
+        &quot;log-0000&quot;,
+        &quot;rb-public&quot;
+      ],
+      &quot;root_cause&quot;: &quot;unknown&quot;,
+      &quot;service&quot;: &quot;recommendationservice&quot;,
+      &quot;summary&quot;: &quot;Public dataset case (test-004): no executable repairs permitted. The largest anomalies are latency spikes in recommendationservice (latency-90 0.0095s -&gt; 4.52s, latency-50 0.0071s -&gt; 1.35s) and productcatalogservice (latency-90 0.0043s -&gt; 2.16s), with frontend showing downstream latency (latency-90 0.62s -&gt; 10.14s) and a &#x27;failed to get product recommendations&#x27; log. recommendationservice also shows socket count 4 -&gt; 12 and memory 46.9MB -&gt; 91.5MB, while its CPU and workload dropped, so the latency is not explained by CPU saturation. productcatalogservice logs only show trace-export DeadlineExceeded messages, which are a symptom of the slowdown rather than proof of a fault. No logs from recommendationservice itself, no error-rate or dependency-timeout evidence, and no database-lock or process-crash indicators were observed, so the root cause cannot be pinned to a specific fault class; recommendationservice is the most anomalous component but the cause remains undetermined.&quot;
+    },
+    &quot;error&quot;: null,
+    &quot;run_id&quot;: &quot;0e09071e1ae2440ca0d39e3963d86c34&quot;
+  },
+  {
+    &quot;case&quot;: &quot;test-006&quot;,
+    &quot;variant&quot;: &quot;baseline&quot;,
+    &quot;repeat&quot;: 0,
+    &quot;expected_service&quot;: &quot;productcatalogservice&quot;,
+    &quot;prediction&quot;: null,
+    &quot;error&quot;: {
+      &quot;message&quot;: &quot;Expecting value: line 1 column 1 (char 0)&quot;,
+      &quot;type&quot;: &quot;JSONDecodeError&quot;
+    },
+    &quot;run_id&quot;: &quot;51eae7cc326d42319df2ffb3ff24c51c&quot;
+  },
+  {
+    &quot;case&quot;: &quot;test-007&quot;,
+    &quot;variant&quot;: &quot;baseline&quot;,
+    &quot;repeat&quot;: 0,
+    &quot;expected_service&quot;: &quot;emailservice&quot;,
+    &quot;prediction&quot;: null,
+    &quot;error&quot;: {
+      &quot;message&quot;: &quot;Expecting value: line 1 column 1 (char 0)&quot;,
+      &quot;type&quot;: &quot;JSONDecodeError&quot;
+    },
+    &quot;run_id&quot;: &quot;bc971796a3ba4d2b80167c8690ae8378&quot;
+  },
+  {
+    &quot;case&quot;: &quot;test-008&quot;,
+    &quot;variant&quot;: &quot;baseline&quot;,
+    &quot;repeat&quot;: 0,
+    &quot;expected_service&quot;: &quot;emailservice&quot;,
+    &quot;prediction&quot;: null,
+    &quot;error&quot;: {
+      &quot;message&quot;: &quot;Expecting value: line 1 column 1 (char 0)&quot;,
+      &quot;type&quot;: &quot;JSONDecodeError&quot;
+    },
+    &quot;run_id&quot;: &quot;91780e58764245979fb7dc898f814e16&quot;
+  },
+  {
+    &quot;case&quot;: &quot;test-008&quot;,
+    &quot;variant&quot;: &quot;baseline&quot;,
+    &quot;repeat&quot;: 1,
+    &quot;expected_service&quot;: &quot;emailservice&quot;,
+    &quot;prediction&quot;: null,
+    &quot;error&quot;: {
+      &quot;message&quot;: &quot;Expecting value: line 1 column 1 (char 0)&quot;,
+      &quot;type&quot;: &quot;JSONDecodeError&quot;
+    },
+    &quot;run_id&quot;: &quot;c86c5e8c21344206ab7c1f2acf316192&quot;
+  },
+  {
+    &quot;case&quot;: &quot;test-004&quot;,
+    &quot;variant&quot;: &quot;reliable&quot;,
+    &quot;repeat&quot;: 0,
+    &quot;expected_service&quot;: &quot;productcatalogservice&quot;,
+    &quot;prediction&quot;: {
+      &quot;action&quot;: &quot;none&quot;,
+      &quot;evidence_ids&quot;: [
+        &quot;metric-55f77a354185041b&quot;,
+        &quot;metric-6bc618e6c405656b&quot;,
+        &quot;metric-55e79c28e9931d65&quot;,
+        &quot;metric-321d120852be2a98&quot;,
+        &quot;metric-c6326ab017f7e211&quot;,
+        &quot;metric-6b2b85b077460b1c&quot;,
+        &quot;metric-52b8f056db9f7728&quot;,
+        &quot;log-0000&quot;,
+        &quot;log-0002&quot;,
+        &quot;log-0003&quot;,
+        &quot;log-0004&quot;,
+        &quot;log-0001&quot;
+      ],
+      &quot;root_cause&quot;: &quot;unknown&quot;,
+      &quot;service&quot;: &quot;recommendationservice&quot;,
+      &quot;summary&quot;: &quot;Public dataset case (test-004). The largest anomalies are latency spikes in recommendationservice (latency-90 0.0095s -&gt; 4.52s, anomaly 9476; latency-50 0.0071s -&gt; 1.35s, anomaly 3769) with a socket count increase (4 -&gt; 12, anomaly 40) and memory roughly doubling (46.9MB -&gt; 91.5MB, anomaly 19), while its CPU and workload actually decreased. productcatalogservice shows the highest-scoring latency anomaly (latency-90 0.0043s -&gt; 2.16s, anomaly 9979) plus repeated &#x27;traces export: context deadline exceeded&#x27; logs, and frontend logs &#x27;failed to get product recommendations&#x27; with elevated latency (latency-90 0.62s -&gt; 10.1s). No logs exist for recommendationservice itself, and no metric shows a clear resource saturation (CPU/mem/disk) or process-down signature, so the initiating fault cannot be attributed with confidence. This is a public dataset, so no remediation action is permitted.&quot;
+    },
+    &quot;error&quot;: null,
+    &quot;run_id&quot;: &quot;6e78ee8447a94b12909ab0816dfa656c&quot;
+  },
+  {
+    &quot;case&quot;: &quot;test-004&quot;,
+    &quot;variant&quot;: &quot;reliable&quot;,
+    &quot;repeat&quot;: 1,
+    &quot;expected_service&quot;: &quot;productcatalogservice&quot;,
+    &quot;prediction&quot;: {
+      &quot;action&quot;: &quot;none&quot;,
+      &quot;evidence_ids&quot;: [
+        &quot;metric-55f77a354185041b&quot;,
+        &quot;metric-6bc618e6c405656b&quot;,
+        &quot;metric-55e79c28e9931d65&quot;,
+        &quot;metric-321d120852be2a98&quot;,
+        &quot;metric-c6326ab017f7e211&quot;,
+        &quot;metric-f397470db6157bfd&quot;,
+        &quot;metric-6b2b85b077460b1c&quot;,
+        &quot;metric-52b8f056db9f7728&quot;,
+        &quot;log-0000&quot;,
+        &quot;log-0002&quot;,
+        &quot;log-0001&quot;,
+        &quot;metric-6b111bd55e854ac5&quot;
+      ],
+      &quot;root_cause&quot;: &quot;delay&quot;,
+      &quot;service&quot;: &quot;recommendationservice&quot;,
+      &quot;summary&quot;: &quot;recommendationservice shows the most extreme latency degradation (latency-90 0.0095s -&gt; 4.52s, latency-50 0.0071s -&gt; 1.35s) together with a socket count increase (4 -&gt; 12) and memory growth (~47MB -&gt; ~91MB), while its CPU and workload actually dropped, indicating the service itself is stalled waiting rather than saturated. productcatalogservice shows the highest anomaly score on latency-90 (0.0043s -&gt; 2.16s) and emits repeated &#x27;context deadline exceeded&#x27; trace-export errors, and frontend logs &#x27;failed to get product recommendations&#x27; with elevated latency (latency-90 0.62s -&gt; 10.1s). The frontend error and productcatalogservice deadline errors are downstream symptoms of the stalled recommendation path; the root cause component is recommendationservice with an injected dependency delay. No repair action is permitted for this public dataset.&quot;
+    },
+    &quot;error&quot;: null,
+    &quot;run_id&quot;: &quot;1e6b79f39cc24b89b047adf5082c9d44&quot;
+  },
+  {
+    &quot;case&quot;: &quot;test-004&quot;,
+    &quot;variant&quot;: &quot;dual&quot;,
+    &quot;repeat&quot;: 0,
+    &quot;expected_service&quot;: &quot;productcatalogservice&quot;,
+    &quot;prediction&quot;: null,
+    &quot;error&quot;: {
+      &quot;message&quot;: &quot;Expecting value: line 1 column 1 (char 0)&quot;,
+      &quot;type&quot;: &quot;JSONDecodeError&quot;
+    },
+    &quot;run_id&quot;: &quot;4bd945658946408995f1f9f9ab1895d3&quot;
+  },
+  {
+    &quot;case&quot;: &quot;test-004&quot;,
+    &quot;variant&quot;: &quot;dual&quot;,
+    &quot;repeat&quot;: 1,
+    &quot;expected_service&quot;: &quot;productcatalogservice&quot;,
+    &quot;prediction&quot;: {
+      &quot;action&quot;: &quot;none&quot;,
+      &quot;evidence_ids&quot;: [
+        &quot;log-0001&quot;,
+        &quot;log-0000&quot;,
+        &quot;log-0002&quot;,
+        &quot;log-0003&quot;,
+        &quot;log-0004&quot;,
+        &quot;metric-55f77a354185041b&quot;,
+        &quot;metric-6bc618e6c405656b&quot;,
+        &quot;metric-55e79c28e9931d65&quot;,
+        &quot;metric-321d120852be2a98&quot;,
+        &quot;metric-6b2b85b077460b1c&quot;,
+        &quot;metric-f73c3dbf4321273c&quot;,
+        &quot;metric-6b111bd55e854ac5&quot;
+      ],
+      &quot;root_cause&quot;: &quot;unknown&quot;,
+      &quot;service&quot;: &quot;recommendationservice&quot;,
+      &quot;summary&quot;: &quot;Frontend reports &#x27;failed to get product recommendations&#x27; (log-0001) with frontend latency-50 rising 0.18s-&gt;3.08s and latency-90 0.62s-&gt;10.1s (metric-f73c3dbf4321273c, metric-6b111bd55e854ac5), and productcatalogservice emits repeated &#x27;traces export: context deadline exceeded&#x27; DeadlineExceeded errors (log-0000, log-0002, log-0003, log-0004) with latency-90 0.004s-&gt;2.16s (metric-6b2b85b077460b1c). recommendationservice shows the largest latency blowup (latency-90 0.0095s-&gt;4.52s, metric-55f77a354185041b; latency-50 0.0071s-&gt;1.35s, metric-6bc618e6c405656b) plus socket count 4-&gt;12 (metric-55e79c28e9931d65) and memory 47MB-&gt;91MB (metric-321d120852be2a98), while its CPU and workload actually dropped (metric-c6326ab017f7e211, metric-f397470db6157bfd). No recommendationservice logs exist and no error-rate metric rose (frontend error metric-f27ee3625a8c293c stayed 0), so the evidence is consistent with a latency/dependency-timeout symptom chain but does not isolate a definitive root-cause component or fault class; the productcatalogservice DeadlineExceeded messages are trace-export timeouts (a symptom of the same slowdown), not proof of a crash. Per policy, root cause is reported as unknown with no action.&quot;
+    },
+    &quot;error&quot;: null,
+    &quot;run_id&quot;: &quot;90b7d327d32c4a0e8c0a18497eaf1f26&quot;
+  },
+  {
+    &quot;case&quot;: &quot;test-010&quot;,
+    &quot;variant&quot;: &quot;dual&quot;,
+    &quot;repeat&quot;: 0,
+    &quot;expected_service&quot;: &quot;currencyservice&quot;,
+    &quot;prediction&quot;: null,
+    &quot;error&quot;: {
+      &quot;message&quot;: &quot;Expecting value: line 1 column 1 (char 0)&quot;,
+      &quot;type&quot;: &quot;JSONDecodeError&quot;
+    },
+    &quot;run_id&quot;: &quot;8f869ab39dfd4f5e8bb84da48b0c5d9c&quot;
+  }
+]</pre></section></main></html>
