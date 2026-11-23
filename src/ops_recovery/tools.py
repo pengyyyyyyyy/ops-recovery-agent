@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from smolagents import Tool
 
@@ -80,6 +82,15 @@ class ReadTool(Tool):
             if result["ok"]:
                 run = self.store.get(self.run_id)
                 observed = run["evidence"]
+                if self.name == "search_runbooks" and run.get("session_id"):
+                    from .skills import Skills
+
+                    guides = Skills(self.store).match(self.backend.spec["kind"], observed.values())
+                    result["data"].setdefault("evidence", []).extend(guides)
+                    if guides:
+                        self.store.event(
+                            self.run_id, "skills_retrieved", {"ids": [guide["id"] for guide in guides]}
+                        )
                 for row in result["data"].get("evidence", []):
                     observed[row["id"]] = row
                 self.store.update(self.run_id, evidence=observed)
@@ -89,6 +100,44 @@ class ReadTool(Tool):
         except (ValidationError, ToolFault) as error:
             code = error.code if isinstance(error, ToolFault) else "invalid_arguments"
             return {"ok": False, "error": {"code": code, "message": str(error), "retryable": False}}
+
+
+class PriorTurnTool(Tool):
+    name = "get_prior_turn"
+    description = (
+        "Read the source of a prior context entry in this incident. Historical evidence may be stale."
+    )
+    inputs = {"run_id": {"type": "string", "description": "A prior run ID from the context"}}
+    output_type = "object"
+
+    def __init__(self, store, run_id):
+        self.store, self.run_id = store, run_id
+        super().__init__()
+
+    def forward(self, run_id: str) -> dict:
+        with self.store.connect() as db:
+            row = db.execute(
+                """SELECT r.data,j.message FROM incident_jobs j JOIN runs r ON r.id=j.run_id
+                JOIN incident_jobs current ON current.run_id=? AND current.kind='diagnose'
+                WHERE j.kind='diagnose' AND j.run_id=? AND j.session_id=current.session_id AND j.seq<current.seq""",
+                (self.run_id, run_id),
+            ).fetchone()
+        if not row:
+            return {"ok": False, "error": {"message": "Prior turn is outside this incident"}}
+        run = json.loads(row[0])
+        keys = (run.get("diagnosis") or {}).get("evidence_ids", [])[:4]
+        result = {
+            "ok": True,
+            "data": {
+                "historical": True,
+                "run_id": run_id,
+                "message": row[1][:1500],
+                "diagnosis": run.get("diagnosis"),
+                "evidence": [run["evidence"][key] for key in keys],
+            },
+        }
+        self.store.event(self.run_id, "prior_turn_retrieved", {"run_id": run_id, "evidence_ids": keys})
+        return result
 
 
 def diagnostic_tools(backend, store: Store, run_id: str, *, reliable: bool = True):

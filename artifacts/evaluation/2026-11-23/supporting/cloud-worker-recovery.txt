@@ -1,0 +1,6 @@
+RUNNING_READ_RESUMED
+UNEXECUTED_APPROVAL_INVALIDATED
+UNKNOWN_WITHOUT_RECORD_PAUSED
+WORKER_RECOVERY_MATRIX={"duplicate_repairs":0,"elapsed_s":3.381,"lost_response_reconciled":true,"running_read_resumed":true,"stale_approval_invalidated":true,"unknown_without_record_paused":true,"verification_probes":3}
+STATISTICS_TEST_SCRIPT=/var/tmp/ops-acceptance-matrix.b915jS/statistics.py
+CLOUD_MATRIX_OK

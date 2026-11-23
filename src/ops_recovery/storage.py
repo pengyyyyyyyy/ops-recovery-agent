@@ -5,10 +5,11 @@ import json
 import sqlite3
 import time
 import uuid
-from contextlib import contextmanager
+from contextlib import closing, contextmanager
 from pathlib import Path
 
 from .domain import BudgetExceeded, BusyRun, Phase
+from .locks import try_lock
 
 
 def canonical(value: object) -> str:
@@ -38,15 +39,25 @@ class Store:
                 id TEXT PRIMARY KEY, run_id TEXT NOT NULL, amount REAL NOT NULL,
                 status TEXT NOT NULL, input_tokens INTEGER, output_tokens INTEGER
             );
+            CREATE TABLE IF NOT EXISTS model_slots (
+                slot INTEGER PRIMARY KEY, reuse_after REAL NOT NULL
+            );
             """)
 
+    @contextmanager
     def connect(self):
-        connection = sqlite3.connect(self.path, timeout=10)
-        connection.row_factory = sqlite3.Row
-        return connection
+        with closing(sqlite3.connect(self.path, timeout=10)) as db, db:
+            db.row_factory = sqlite3.Row
+            db.execute("PRAGMA foreign_keys=ON")
+            yield db
 
     def create(self, backend: dict, mode: str, *, run_id: str | None = None) -> str:
         run_id = run_id or uuid.uuid4().hex
+        with self.connect() as db:
+            self.insert_run(db, backend, mode, run_id)
+        return run_id
+
+    def insert_run(self, db, backend: dict, mode: str, run_id: str, **fields):
         run = {
             "id": run_id,
             "phase": Phase.DIAGNOSING,
@@ -59,11 +70,10 @@ class Store:
             "approval": None,
             "proposal_digest": None,
             "review_round": 0,
+            **fields,
         }
-        with self.connect() as db:
-            db.execute("INSERT INTO runs(id,data) VALUES (?,?)", (run_id, canonical(run)))
-        self.event(run_id, "created", {"mode": mode, "backend_type": backend["kind"]})
-        return run_id
+        db.execute("INSERT INTO runs(id,data) VALUES (?,?)", (run_id, canonical(run)))
+        self.insert_event(db, run_id, "created", {"mode": mode, "backend_type": backend["kind"]})
 
     def get(self, run_id: str) -> dict:
         with self.connect() as db:
@@ -72,7 +82,7 @@ class Store:
             raise KeyError(f"Unknown run: {run_id}")
         return json.loads(row["data"])
 
-    def update(self, run_id: str, *, expected: set[str] | None = None, **changes) -> dict:
+    def update(self, run_id: str, *, expected: set[str] | None = None, event=None, **changes) -> dict:
         with self.connect() as db:
             db.execute("BEGIN IMMEDIATE")
             row = db.execute("SELECT data,version FROM runs WHERE id=?", (run_id,)).fetchone()
@@ -84,14 +94,49 @@ class Store:
             run.update(changes)
             run["updated_at"] = time.time()
             db.execute("UPDATE runs SET data=?,version=version+1 WHERE id=?", (canonical(run), run_id))
+            if event is not None:
+                self.insert_event(db, run_id, *event)
         return run
 
     def event(self, run_id: str, kind: str, payload: dict):
         with self.connect() as db:
-            db.execute(
-                "INSERT INTO events(run_id,timestamp,kind,payload) VALUES (?,?,?,?)",
-                (run_id, time.time(), kind, canonical(payload)),
-            )
+            self.insert_event(db, run_id, kind, payload)
+
+    @staticmethod
+    def insert_event(db, run_id: str, kind: str, payload: dict):
+        db.execute(
+            "INSERT INTO events(run_id,timestamp,kind,payload) VALUES (?,?,?,?)",
+            (run_id, time.time(), kind, canonical(payload)),
+        )
+
+    @contextmanager
+    def model_slot(self, run_id: str, *, wait: float, crash_grace: float):
+        deadline = time.monotonic() + wait
+        while time.monotonic() < deadline:
+            for slot in range(3):
+                with try_lock(self.path.with_name(f"model-{slot}.lock")) as acquired:
+                    if not acquired:
+                        continue
+                    with self.connect() as db:
+                        row = db.execute(
+                            "SELECT reuse_after FROM model_slots WHERE slot=?", (slot,)
+                        ).fetchone()
+                        if row and row[0] > time.time():
+                            continue
+                        db.execute(
+                            "INSERT OR REPLACE INTO model_slots VALUES (?, ?)",
+                            (slot, time.time() + crash_grace),
+                        )
+                        self.insert_event(db, run_id, "model_slot_acquired", {"slot": slot})
+                    try:
+                        yield
+                    finally:
+                        with self.connect() as db:
+                            db.execute("DELETE FROM model_slots WHERE slot=?", (slot,))
+                            self.insert_event(db, run_id, "model_slot_released", {"slot": slot})
+                    return
+            time.sleep(0.05)
+        raise TimeoutError("The global model queue exceeded the stage deadline")
 
     def events(self, run_id: str) -> list[dict]:
         with self.connect() as db:

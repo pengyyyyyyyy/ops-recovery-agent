@@ -1,0 +1,135 @@
+<!doctype html><meta charset='utf-8'><title>Evaluation report</title><style>body{font:15px/1.6 system-ui;max-width:1100px;margin:40px auto;padding:24px;background:#f5f5ef;color:#20312b}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:white;padding:24px;border:1px solid #ddd}</style><h1>Reproducible evaluation</h1><p>Offline checks and online model measurements are reported separately. Public replay evaluates diagnosis only; local repair results use real HTTP probes.</p><pre>{
+  &quot;protocol&quot;: {
+    &quot;approval_policy&quot;: &quot;automated-test-policy (not a human approval measurement)&quot;,
+    &quot;dataset_manifest_digest&quot;: &quot;d7cea90a48588184f2bd8af9bbf436b45d3622fbcbc18eb4db31939309baae98&quot;,
+    &quot;dataset_revision&quot;: &quot;afeacb11bcc94dadfd1c8f483ee4377b2b8b614e&quot;,
+    &quot;limitations&quot;: [
+      &quot;Small historical regression sample; not unseen held-out evaluation or a full RCAEval reproduction&quot;,
+      &quot;Run-level intervals are descriptive; repeated runs on a case are correlated&quot;,
+      &quot;Public metrics/logs only; raw traces are not imported in this release&quot;,
+      &quot;Static public replay cannot validate repair success&quot;,
+      &quot;Both roles use the same model; isolated context is not statistical independence&quot;
+    ],
+    &quot;mode&quot;: &quot;online&quot;,
+    &quot;model&quot;: &quot;deepseek-flash&quot;,
+    &quot;model_limits&quot;: {
+      &quot;max_output_tokens&quot;: 2048,
+      &quot;stage_deadline_seconds&quot;: 120.0
+    },
+    &quot;packages&quot;: {
+      &quot;httpx&quot;: &quot;0.28.1&quot;,
+      &quot;mcp&quot;: &quot;1.30.0&quot;,
+      &quot;pydantic&quot;: &quot;2.14.3&quot;,
+      &quot;smolagents&quot;: &quot;1.26.0&quot;
+    },
+    &quot;price_cny_per_million&quot;: {
+      &quot;input&quot;: 2.0,
+      &quot;output&quot;: 8.0
+    },
+    &quot;prompt_digest&quot;: &quot;f9a1070c0f6d04cd8a8f2136aaa841534677ef0394c4842a4bae8f8cfcc63627&quot;,
+    &quot;python&quot;: &quot;3.12.14&quot;,
+    &quot;repeats&quot;: 2,
+    &quot;source_digest&quot;: &quot;3e080e0f916d99a9863191884e90d31f9ec69d8a3ef87711c4925c8ba38a65e0&quot;,
+    &quot;split&quot;: &quot;test&quot;,
+    &quot;tool_fault&quot;: &quot;first query_logs request times out once in every run&quot;,
+    &quot;variants&quot;: {
+      &quot;dual&quot;: {
+        &quot;dual&quot;: true,
+        &quot;reliable&quot;: true
+      },
+      &quot;reliable&quot;: {
+        &quot;dual&quot;: false,
+        &quot;reliable&quot;: true
+      }
+    },
+    &quot;evaluation_status&quot;: &quot;regression; same case groups have been used in prior evaluation and engineering diagnosis&quot;,
+    &quot;aggregation&quot;: {
+      &quot;local&quot;: 0.6,
+      &quot;public&quot;: 0.4
+    }
+  },
+  &quot;completed_runs&quot;: 60,
+  &quot;summary&quot;: {
+    &quot;local&quot;: {
+      &quot;reliable&quot;: {
+        &quot;n_runs&quot;: 6,
+        &quot;n_unique_cases&quot;: 3,
+        &quot;service_ac_at_1&quot;: 1.0,
+        &quot;wilson_95_run_level&quot;: [
+          0.6097,
+          1.0
+        ],
+        &quot;accepted_correct_rate&quot;: 1.0,
+        &quot;failures&quot;: 0,
+        &quot;mean_tool_attempts&quot;: 11.333333333333334,
+        &quot;mean_model_calls&quot;: 6.5,
+        &quot;mean_elapsed_seconds&quot;: 9.695333333333334,
+        &quot;review_rejection_rate&quot;: 0.0,
+        &quot;verified_repair_rate&quot;: 1.0,
+        &quot;unknown_response_recovered&quot;: 6,
+        &quot;duplicate_repair_events&quot;: 0
+      },
+      &quot;dual&quot;: {
+        &quot;n_runs&quot;: 6,
+        &quot;n_unique_cases&quot;: 3,
+        &quot;service_ac_at_1&quot;: 1.0,
+        &quot;wilson_95_run_level&quot;: [
+          0.6097,
+          1.0
+        ],
+        &quot;accepted_correct_rate&quot;: 1.0,
+        &quot;failures&quot;: 0,
+        &quot;mean_tool_attempts&quot;: 14.5,
+        &quot;mean_model_calls&quot;: 9.666666666666666,
+        &quot;mean_elapsed_seconds&quot;: 13.935,
+        &quot;review_rejection_rate&quot;: 0.0,
+        &quot;verified_repair_rate&quot;: 1.0,
+        &quot;unknown_response_recovered&quot;: 6,
+        &quot;duplicate_repair_events&quot;: 0
+      }
+    },
+    &quot;public&quot;: {
+      &quot;reliable&quot;: {
+        &quot;n_runs&quot;: 24,
+        &quot;n_unique_cases&quot;: 12,
+        &quot;service_ac_at_1&quot;: 1.0,
+        &quot;wilson_95_run_level&quot;: [
+          0.862,
+          1
+        ],
+        &quot;accepted_correct_rate&quot;: 1.0,
+        &quot;failures&quot;: 0,
+        &quot;mean_tool_attempts&quot;: 10.166666666666666,
+        &quot;mean_model_calls&quot;: 6.541666666666667,
+        &quot;mean_elapsed_seconds&quot;: 7.640125,
+        &quot;review_rejection_rate&quot;: 0.0
+      },
+      &quot;dual&quot;: {
+        &quot;n_runs&quot;: 24,
+        &quot;n_unique_cases&quot;: 12,
+        &quot;service_ac_at_1&quot;: 1.0,
+        &quot;wilson_95_run_level&quot;: [
+          0.862,
+          1
+        ],
+        &quot;accepted_correct_rate&quot;: 1.0,
+        &quot;failures&quot;: 0,
+        &quot;mean_tool_attempts&quot;: 14.083333333333334,
+        &quot;mean_model_calls&quot;: 9.75,
+        &quot;mean_elapsed_seconds&quot;: 12.348208333333334,
+        &quot;review_rejection_rate&quot;: 0.0
+      }
+    },
+    &quot;weighted_diagnosis&quot;: {
+      &quot;dual&quot;: 1.0,
+      &quot;reliable&quot;: 1.0
+    }
+  },
+  &quot;experiment_cost_ledger&quot;: {
+    &quot;settled&quot;: {
+      &quot;cny&quot;: 3.778614,
+      &quot;requests&quot;: 488
+    }
+  },
+  &quot;failure_reasons&quot;: {}
+}</pre>

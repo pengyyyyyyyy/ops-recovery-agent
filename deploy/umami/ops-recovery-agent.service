@@ -1,0 +1,26 @@
+[Unit]
+Description=Ops Recovery durable incident worker
+Requires=ops-pilot-broker.service
+After=ops-pilot-broker.service
+
+[Service]
+Type=simple
+User=ops-recovery
+Group=ops-recovery
+StateDirectory=ops-recovery-agent
+StateDirectoryMode=0700
+WorkingDirectory=/var/lib/ops-recovery-agent
+Environment=OPS_STATE_DIR=/var/lib/ops-recovery-agent
+Environment=OPS_MODEL_MODE=offline
+Environment=PYTHONUNBUFFERED=1
+UMask=0077
+ExecStart=/opt/ops-recovery-agent/runtime/bin/ops session serve --mode offline
+Restart=on-failure
+RestartSec=3s
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target

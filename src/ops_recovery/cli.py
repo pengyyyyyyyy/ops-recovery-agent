@@ -11,6 +11,7 @@ from .config import Settings
 from .coordinator import Coordinator
 from .lab import FAULTS, start_lab
 from .report import render_run
+from .session_cli import session_app, skill_app
 from .storage import Store
 
 app = typer.Typer(
@@ -20,6 +21,8 @@ app = typer.Typer(
 )
 lab_app = typer.Typer(no_args_is_help=True, pretty_exceptions_show_locals=False)
 app.add_typer(lab_app, name="lab")
+app.add_typer(session_app, name="session")
+app.add_typer(skill_app, name="skill")
 
 
 def display(value):

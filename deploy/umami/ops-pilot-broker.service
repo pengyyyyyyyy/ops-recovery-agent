@@ -1,0 +1,20 @@
+[Unit]
+Description=Ops Recovery fixed-scope Umami action broker
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=simple
+User=root
+Group=ops-recovery
+RuntimeDirectory=ops-pilot
+RuntimeDirectoryMode=0750
+UMask=0007
+ExecStart=/opt/ops-recovery-agent/runtime/bin/python -m ops_recovery.pilot_broker --directory /opt/ops-recovery-pilot --state /var/lib/ops-recovery-agent/runs.sqlite3 --socket /run/ops-pilot/broker.sock
+Restart=on-failure
+RestartSec=3s
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

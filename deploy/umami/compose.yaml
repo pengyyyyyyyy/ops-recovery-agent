@@ -1,0 +1,50 @@
+name: ops-recovery-umami
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  db:
+    image: ${POSTGRES_IMAGE:-docker.io/library/postgres:15-alpine}
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: umami
+      POSTGRES_USER: umami
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Generate a password in .env}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"']
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    logging: *logging
+
+  umami:
+    image: ${UMAMI_IMAGE:-ghcr.io/umami-software/umami:3.5.0}
+    restart: unless-stopped
+    init: true
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      DATABASE_URL: postgresql://umami:${POSTGRES_PASSWORD:?Generate a password in .env}@db:5432/umami
+      APP_SECRET: ${APP_SECRET:?Generate an app secret in .env}
+      TWO_FACTOR_ENCRYPTION_KEY: ${TWO_FACTOR_ENCRYPTION_KEY:?Generate a 2FA key in .env}
+      DISABLE_TELEMETRY: "1"
+      PORT: ${UMAMI_PORT:-3000}
+    healthcheck:
+      test: [CMD, curl, --fail, --silent, http://127.0.0.1:3000/api/heartbeat]
+      interval: 5s
+      timeout: 4s
+      retries: 18
+      start_period: 30s
+    logging: *logging
+
+volumes:
+  postgres_data:
