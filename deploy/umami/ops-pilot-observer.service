@@ -1,0 +1,21 @@
+[Unit]
+Description=Observe completed Umami pilot probes and deduplicate alerts
+Requires=ops-pilot-broker.service
+After=ops-pilot-broker.service
+
+[Service]
+Type=oneshot
+User=ops-recovery
+Group=ops-recovery
+StateDirectory=ops-recovery-agent
+StateDirectoryMode=0700
+WorkingDirectory=/var/lib/ops-recovery-agent
+Environment=OPS_STATE_DIR=/var/lib/ops-recovery-agent
+Environment=OPS_MODEL_MODE=offline
+UMask=0077
+ExecStart=/opt/ops-recovery-agent/runtime/bin/ops session observe
+TimeoutStartSec=25s
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true

@@ -1,0 +1,112 @@
+<!doctype html><meta charset='utf-8'><title>Evaluation report</title><style>body{font:15px/1.6 system-ui;max-width:1100px;margin:40px auto;padding:24px;background:#f5f5ef;color:#20312b}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:white;padding:24px;border:1px solid #ddd}</style><h1>Reproducible evaluation</h1><p>Offline checks and online model measurements are reported separately. Public replay evaluates diagnosis only; local repair results use real HTTP probes.</p><pre>{
+  &quot;observation&quot;: {
+    &quot;start&quot;: 1795075928,
+    &quot;checked_at&quot;: 1795439268.8005483,
+    &quot;sample_sha256&quot;: &quot;c56eadbd2741bc415f2ec41cf00a9378323d7f8e0f1c5ef46f4458811925253d&quot;,
+    &quot;samples&quot;: 6080,
+    &quot;watches&quot;: [
+      {
+        &quot;watch&quot;: &quot;e3c1cf489da8131e85c3b68d88ecf474b3ac86b732856f10a86d88f3b68ed3d3&quot;,
+        &quot;samples&quot;: 6080,
+        &quot;healthy&quot;: 6053,
+        &quot;unhealthy&quot;: 27,
+        &quot;first&quot;: 1795075928.2899537,
+        &quot;last&quot;: 1795439222.2914536,
+        &quot;elapsed_h&quot;: 100.915,
+        &quot;max_gap_s&quot;: 63.177,
+        &quot;gaps_over_150s&quot;: [],
+        &quot;longest_continuous_h&quot;: 100.915,
+        &quot;continuous_from&quot;: 1795075928.2899537,
+        &quot;continuous_to&quot;: 1795439222.2914536,
+        &quot;alerts_opened&quot;: 4,
+        &quot;alerts_closed&quot;: 4
+      }
+    ],
+    &quot;jobs&quot;: {
+      &quot;done&quot;: 8
+    },
+    &quot;pilot_runs&quot;: 6
+  },
+  &quot;clean_post_fault_hours&quot;: 100.274,
+  &quot;sampled_healthy_fraction&quot;: 0.9955592105263158,
+  &quot;acceptance&quot;: &quot;passed&quot;,
+  &quot;load&quot;: {
+    &quot;load&quot;: [
+      {
+        &quot;environment&quot;: &quot;local synthetic Umami site&quot;,
+        &quot;batch&quot;: &quot;96d87328d0534d4898b11b0221207580&quot;,
+        &quot;target_requests_per_second&quot;: 1,
+        &quot;schedule_seconds&quot;: 15,
+        &quot;concurrency&quot;: 8,
+        &quot;offered&quot;: 15,
+        &quot;sent&quot;: 15,
+        &quot;accepted&quot;: 15,
+        &quot;dropped_before_send&quot;: 0,
+        &quot;elapsed_seconds&quot;: 14.022,
+        &quot;p50_ms&quot;: 25.14,
+        &quot;p95_ms&quot;: 45.59,
+        &quot;p99_ms&quot;: 45.59,
+        &quot;host_cpu_peak_pct&quot;: 53.57,
+        &quot;host_mem_available_min_mib&quot;: 2564.53,
+        &quot;persisted&quot;: 15
+      },
+      {
+        &quot;environment&quot;: &quot;local synthetic Umami site&quot;,
+        &quot;batch&quot;: &quot;20e8d0877a31438ea629b7e23cf9e390&quot;,
+        &quot;target_requests_per_second&quot;: 3,
+        &quot;schedule_seconds&quot;: 15,
+        &quot;concurrency&quot;: 8,
+        &quot;offered&quot;: 45,
+        &quot;sent&quot;: 45,
+        &quot;accepted&quot;: 45,
+        &quot;dropped_before_send&quot;: 0,
+        &quot;elapsed_seconds&quot;: 14.689,
+        &quot;p50_ms&quot;: 23.21,
+        &quot;p95_ms&quot;: 54.26,
+        &quot;p99_ms&quot;: 77.4,
+        &quot;host_cpu_peak_pct&quot;: 25.63,
+        &quot;host_mem_available_min_mib&quot;: 2601.25,
+        &quot;persisted&quot;: 45
+      },
+      {
+        &quot;environment&quot;: &quot;local synthetic Umami site&quot;,
+        &quot;batch&quot;: &quot;1fb9c9467e16410a990bb5b7849a527c&quot;,
+        &quot;target_requests_per_second&quot;: 5,
+        &quot;schedule_seconds&quot;: 15,
+        &quot;concurrency&quot;: 8,
+        &quot;offered&quot;: 75,
+        &quot;sent&quot;: 75,
+        &quot;accepted&quot;: 75,
+        &quot;dropped_before_send&quot;: 0,
+        &quot;elapsed_seconds&quot;: 14.823,
+        &quot;p50_ms&quot;: 22.92,
+        &quot;p95_ms&quot;: 40.08,
+        &quot;p99_ms&quot;: 51.73,
+        &quot;host_cpu_peak_pct&quot;: 21.11,
+        &quot;host_mem_available_min_mib&quot;: 2586.11,
+        &quot;persisted&quot;: 75
+      },
+      {
+        &quot;environment&quot;: &quot;local synthetic Umami site&quot;,
+        &quot;batch&quot;: &quot;36d96305202940dc8aa73f62b40cc669&quot;,
+        &quot;target_requests_per_second&quot;: 10,
+        &quot;schedule_seconds&quot;: 15,
+        &quot;concurrency&quot;: 8,
+        &quot;offered&quot;: 150,
+        &quot;sent&quot;: 150,
+        &quot;accepted&quot;: 150,
+        &quot;dropped_before_send&quot;: 0,
+        &quot;elapsed_seconds&quot;: 15.021,
+        &quot;p50_ms&quot;: 21.92,
+        &quot;p95_ms&quot;: 48.37,
+        &quot;p99_ms&quot;: 103.77,
+        &quot;host_cpu_peak_pct&quot;: 40.1,
+        &quot;host_mem_available_min_mib&quot;: 2574.86,
+        &quot;persisted&quot;: 150
+      }
+    ],
+    &quot;worker_restart&quot;: &quot;done rejected&quot;
+  },
+  &quot;statistics&quot;: &quot;PREVIOUS_SHARE_CLEANED=true\n{\&quot;check\&quot;: \&quot;umami_stats_api\&quot;, \&quot;status\&quot;: \&quot;passed\&quot;, \&quot;pageviews_before\&quot;: 0, \&quot;pageviews_after\&quot;: 1, \&quot;visibility_delay_ms\&quot;: 40}\nTEMPORARY_SHARE_REVOKED=true\nactive\n&quot;,
+  &quot;scope&quot;: &quot;Dedicated Umami/PostgreSQL pilot with synthetic requests and an offline diagnostic model. Paid model measurements are separate local regression campaigns.&quot;
+}</pre>

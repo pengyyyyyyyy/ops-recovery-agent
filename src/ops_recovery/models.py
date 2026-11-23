@@ -6,7 +6,7 @@ from dataclasses import replace
 
 import httpx
 from smolagents import Model
-from smolagents.models import ChatMessage
+from smolagents.models import ChatMessage, get_tool_json_schema
 from smolagents.monitoring import TokenUsage
 
 from .config import Settings
@@ -32,6 +32,9 @@ def tool_message(name: str, arguments: dict) -> ChatMessage:
 def heuristic(evidence: list[dict]) -> dict:
     """Transparent offline baseline; consumes observations, never ground-truth labels."""
     for signal, service, cause, action in [
+        ("database_unreachable", "postgres", "dependency_timeout", "none"),
+        ("managed_config_drift", "umami", "configuration_drift", "rollback_umami_config"),
+        ("umami_exited", "umami", "process_crash", "restart_umami"),
         ("process_exited", "gateway", "process_crash", "restart_api"),
         ("database_locked", "database", "database_lock", "release_database_lock"),
         ("upstream_timeout", "inventory", "dependency_timeout", "reset_dependency_delay"),
@@ -45,8 +48,9 @@ def heuristic(evidence: list[dict]) -> dict:
                 "evidence_ids": [row["id"] for row in rows[:3]],
                 "action": action,
             }
+    is_pilot = any(row["id"].startswith("pilot-") for row in evidence)
     ranked = sorted(
-        (row for row in evidence if row.get("kind") == "metric"),
+        (row for row in evidence if row.get("kind") == "metric" and not is_pilot),
         key=lambda row: row.get("anomaly_score", 0),
         reverse=True,
     )
@@ -118,11 +122,38 @@ class HTTPModel(Model):
         self.started = time.monotonic()
 
     def generate(
-        self, messages, stop_sequences=None, response_format=None, tools_to_call_from=None, **kwargs
+        self,
+        messages,
+        stop_sequences=None,
+        response_format=None,
+        tools_to_call_from=None,
+        native_tool_history=False,
+        **kwargs,
     ):
         remaining = self.settings.agent_deadline - (time.monotonic() - self.started)
         if remaining <= 0:
             raise TimeoutError("Agent deadline exceeded")
+        if native_tool_history:
+            payload = {
+                "messages": messages,
+                "model": self.model_id,
+                "max_tokens": self.settings.max_output,
+                "temperature": 0,
+                "tools": [get_tool_json_schema(tool) for tool in tools_to_call_from],
+            }
+        else:
+            payload = self.legacy_payload(
+                messages, stop_sequences, response_format, tools_to_call_from, **kwargs
+            )
+        if self.settings.api_style == "deepseek":
+            payload["thinking"] = {"type": "disabled"}
+        with self.store.model_slot(self.run_id, wait=remaining, crash_grace=self.settings.model_timeout + 5):
+            remaining = self.settings.agent_deadline - (time.monotonic() - self.started)
+            if remaining <= 0:
+                raise TimeoutError("Agent deadline exceeded while waiting for a model slot")
+            return self.request(payload, remaining)
+
+    def legacy_payload(self, messages, stop_sequences, response_format, tools_to_call_from, **kwargs):
         normalized = []
         for message in messages:
             content = message.get("content") if isinstance(message, dict) else message.content
@@ -134,7 +165,7 @@ class HTTPModel(Model):
                     else replace(message, content=blocks)
                 )
             normalized.append(message)
-        payload = self._prepare_completion_kwargs(
+        return self._prepare_completion_kwargs(
             normalized,
             stop_sequences=stop_sequences,
             response_format=response_format,
@@ -144,8 +175,8 @@ class HTTPModel(Model):
             temperature=0,
             **kwargs,
         )
-        if self.settings.api_style == "deepseek":
-            payload["thinking"] = {"type": "disabled"}
+
+    def request(self, payload, remaining):
         serialized = canonical(payload)
         if len(serialized.encode()) > 120_000:
             raise ValueError("Model context exceeds the project's bounded input budget")

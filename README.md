@@ -1,10 +1,10 @@
 # Ops Recovery Agent
 
-基于 **smolagents** 的运维排障工程项目：通过只读工具收集证据，使用隔离上下文的诊断 Agent 和复核 Agent形成结论，经人工批准执行白名单修复，再以实际 HTTP 请求验证服务恢复。
+基于 **smolagents** 模型和工具接口的运维排障 Agent。项目实现了显式 Agent Loop，负责工具调用、结果回灌、证据校验与上下文压缩。诊断和复核在独立上下文运行，修复由确定性状态机和白名单代理执行。
 
 重点是工具失败、写入结果未知、审批失效和会话恢复时的行为。首版支持 Windows 原生多进程，不要求 Docker。公开 RCAEval 数据参与独立诊断评测。
 
-> 这是可复现的实验系统。离线脚本模型用于验证工程行为，不能当作 LLM 准确率；本地服务实验也不代表真实生产部署。
+持续运维路径提供 `ops session new/chat/show/approve/report`、单机持久任务队列、3 个模型请求许可、探针告警和 skill 候选生命周期。Umami 试点安装步骤见[部署手册](deploy/umami/README.md)。计划与验收状态见[试点设计](docs/EVOLUTION.md)和[新版评测记录](docs/RUNTIME.md)。
 
 ## 能展示的工程能力
 
@@ -43,6 +43,19 @@ if (!(Test-Path .env)) { Copy-Item .env.example .env }
 `approve` 只写入审批；`resume` 才执行修复。CLI 退出后实验服务可继续运行，使用 `lab down` 停止项目启动的服务。审批有效期 10 分钟；租约用于阻止并发恢复同一个运行，异常进程退出后需等待租约到期。
 
 Linux/macOS 将 `.venv\Scripts\ops.exe` 换为 `.venv/bin/ops`。锁定依赖复现可先安装 `requirements.lock.txt`，再 `pip install -e . --no-deps`。
+
+## 持续对话
+
+实验已启动后，在一个终端运行 `.venv\Scripts\ops.exe session serve --mode offline`。在另一个终端创建和使用会话。
+
+```powershell
+.\.venv\Scripts\ops.exe session new '数据库写入失败，请调查原因' --backend lab
+.\.venv\Scripts\ops.exe session chat <session_id>
+.\.venv\Scripts\ops.exe session show <session_id>
+.\.venv\Scripts\ops.exe session report <session_id>
+```
+
+`chat` 中输入 `/exit` 后，可用同一个 ID 重新进入。使用 `session approve <session_id> <run_id> --digest <完整摘要>` 审批当前修复。运行中退出后，只读任务会继续或在 worker 恢复时重跑，未知修复进入对账。
 
 ## 本机接入模型
 
@@ -98,7 +111,24 @@ Set-Content -Encoding ascii data/raw/revision.txt afeacb11bcc94dadfd1c8f483ee437
 
 已知限制：样本较小；重复调用相关，不能把全部运行当作独立故障；模型别名可能变化；本版未导入原始分布式 traces；不能排除公开数据的预训练污染。本地故障环境主要验证执行机制，不能据此推断广泛运维推理能力。
 
-### 2026-11-18 实测
+### 2026-11-23：0.2.1 回归与持续运行验收
+
+已完成 72 小时要求：云端累计观察约 100.9 小时，6,080 个业务探针样本，故障演练后连续健康约 100.3 小时，最大采样间隔 63.177 秒。短窗口 1/3/5/10 RPS 负载共 285/285 请求被接受并回读。云端使用离线诊断模型，付费 DeepSeek 评测为独立实验。
+
+显式 Loop 升级后曾出现严重回归：工具结果压缩丢失数值证据，复核又在耗尽步数前未完成最终提交。修复保留异常分数与前后指标、提供剩余步数提示和结构化最终提交约束；诊断/复核步数仍为 8/5。两轮各 60 次均完整归档。
+
+| 版本与变体 | 公开有效诊断 AC@1 | 本地实际修复 | 60/40 加权诊断 |
+|---|---:|---:|---:|
+| 修复前 / reliable | 5/24 | 6/6 | 68.33% |
+| 修复前 / dual | 3/24 | 1/6 | 15.00% |
+| 0.2.1 / reliable | 24/24 | 6/6 | 100% |
+| 0.2.1 / dual | 24/24 | 6/6 | 100% |
+
+**这是同一批历史案例上的工程回归，已用于定位缺陷，不是新的未见测试集成绩。** 两个角色使用同一模型，双角色本轮没有准确率优势，公开案例平均调用 9.75 次，单角色为 6.54 次。0.2.1 的 12 次修复均完成丢响应对账，重复修复为 0。修复前后估算费用分别为 3.573386 / 3.778614 元；保留全部失败 trace。
+
+[本轮归档与完整 trace 下载](artifacts/evaluation/2026-11-23/README.md) · [持续运维验收与能力边界](docs/RUNTIME.md)。上下文、skill、真实模型 10 会话/最多 3 请求的结果单独列出，未与回归正确率混算。
+
+### 历史版本实测（2026-11-18）
 
 DeepSeek Flash，核心源码摘要 `5a0185bf94ec`（完整摘要见评测协议），12 个公开测试组各重复两次；本地 3 类故障各重复两次，共三组 90 次真实模型运行。
 
@@ -118,6 +148,7 @@ DeepSeek Flash，核心源码摘要 `5a0185bf94ec`（完整摘要见评测协议
 
 ```text
 src/ops_recovery/
+  agent_loop.py      显式模型→工具→结果循环、步数预算与上下文压缩
   coordinator.py     双 Agent 调度、校验反馈、审批与恢复状态机
   execution.py       有限只读重试与写入未知结果语义
   storage.py         SQLite 检查点、运行租约、顺序 trace、预算账本
@@ -130,6 +161,10 @@ src/ops_recovery/
   datasets.py       数据版本固定、盲测导出和分组划分
   evaluation.py     评测、消融、评分及结果持久化
   report.py         对不可信内容转义的独立 HTML 报告
+  sessions.py       会话、持久任务、worker 恢复与告警去重
+  skills.py         候选生成、静态回放、审批启用与停用
+  umami.py          Umami 试点观测与业务验证适配器
+  pilot_broker.py   Unix socket 白名单动作代理、目标锁与对账
   cli.py            命令行入口
 tests/              单元测试、真实多进程与 MCP 集成测试
 ```
@@ -146,8 +181,8 @@ tests/              单元测试、真实多进程与 MCP 集成测试
 
 测试不使用付费模型。若系统临时目录权限异常，可指定一个全新的工作区临时目录：`pytest --basetemp .state/tests-<唯一名称>`。该目录专用于测试，pytest 会管理其中内容。
 
-GitHub Actions 配置覆盖 Windows/Linux、Python 3.12/3.13。配置了 CI 不代表远程 CI 已实际运行；请以上传后的 Actions 结果为准。
+GitHub Actions 覆盖 Windows/Linux、Python 3.12/3.13；以仓库 Actions 中对应提交的实际结果为准。
 
 ## 开源与归属
 
-本项目采用 Apache-2.0。smolagents 提供 Agent Loop 与工具调用基础；本项目实现其上的可靠执行、审批与恢复、双角色编排、本地实验和评测闭环。没有将框架能力归为自研。依赖和数据归属见 [THIRD_PARTY.md](THIRD_PARTY.md)。
+本项目采用 Apache-2.0。smolagents 提供模型与工具基础。本项目实现显式 Loop、可靠执行、审批与恢复、双角色编排、本地实验和评测闭环。Loop 的设计过程参考了公开教学项目 learn-claude-code，工具和执行策略为运维场景实现。依赖和数据归属见 [THIRD_PARTY.md](THIRD_PARTY.md)。

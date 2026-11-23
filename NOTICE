@@ -2,5 +2,7 @@ Ops Recovery Agent
 Copyright 2026 Ops Recovery Agent contributors
 
 This project uses smolagents and the MCP Python SDK as dependencies.
-Upstream Agent Loop and protocol capabilities remain attributed to their authors.
+smolagents supplies model/tool interfaces; this project implements its own Agent Loop.
+The public learn-claude-code tutorial informed the loop and context-compaction design.
+Upstream libraries, tutorial materials and datasets remain attributed to their authors.
 See THIRD_PARTY.md for dependency and dataset attribution.

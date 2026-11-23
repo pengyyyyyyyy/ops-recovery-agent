@@ -1,12 +1,14 @@
 # 架构、状态与故障语义
 
+本文描述一次调查和修复的核心状态机。持续会话、调度及 Linux Umami 适配见 [RUNTIME.md](RUNTIME.md)。
+
 ## 组件边界
 
 ```mermaid
 flowchart LR
     CLI[CLI] --> C[确定性 Coordinator]
-    C --> D[smolagents 诊断 Agent]
-    C --> R[smolagents 复核 Agent]
+    C --> D[诊断 Loop]
+    C --> R[复核 Loop]
     D --> T[ReadTool 参数校验与有限重试]
     R --> T
     T --> M[可选 MCP stdio]
@@ -67,13 +69,13 @@ SQLite 保存阶段、证据、最终诊断、复核、修复摘要和审批。`
 
 ## 上下文隔离
 
-复核阶段创建新的 ToolCallingAgent 和模型会话，只接收结构化诊断，不能看到诊断 Agent 的思考历史。复核必须通过 `get_evidence` 实际取回引用证据；确定性校验拒绝未取回的证据 ID。
+复核阶段创建新的 Loop 和模型会话，接收结构化诊断。复核通过 `get_evidence` 实际取回引用证据，确定性校验拒绝未取回的证据 ID。Loop 的模型、工具与 schema 来自 smolagents。
 
 两者使用同一模型时仍可能存在相关错误；隔离上下文不等于独立专家。评测必须报告复核是否增加质量或只是增加耗时/成本。
 
 ## Schema 恢复的真实问题
 
-开发期真实模型曾返回 13 条引用，违反 `evidence_ids <= 12`，造成会话失败。现在通过 smolagents 的 `final_answer_checks` 将校验错误反馈回 Loop，让模型在原步数预算内修正。回归测试分别注入过多引用和伪造引用 ID，要求得到合法结论且 trace 保留 `output_rejected`。
+开发期真实模型曾返回 13 条引用，违反 `evidence_ids <= 12`，造成会话失败。当前 Loop 将校验错误放进对应工具结果，让模型在原步数预算内修正。回归测试分别注入过多引用和伪造引用 ID，要求得到合法结论且 trace 保留 `output_rejected`。
 
 ## 数据与密钥
 

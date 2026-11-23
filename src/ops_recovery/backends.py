@@ -129,4 +129,8 @@ def backend_from_spec(spec: dict):
         return LabBackend(Path(spec["directory"]))
     if spec["kind"] == "dataset":
         return DatasetBackend(Path(spec["directory"]))
+    if spec["kind"] == "umami":
+        from .umami import UmamiBackend
+
+        return UmamiBackend(Path(spec["socket"]))
     raise ValueError("Unknown backend kind")

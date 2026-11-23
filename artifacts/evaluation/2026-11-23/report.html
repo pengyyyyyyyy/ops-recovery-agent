@@ -1,0 +1,158 @@
+<!doctype html><meta charset='utf-8'><title>Evaluation report</title><style>body{font:15px/1.6 system-ui;max-width:1100px;margin:40px auto;padding:24px;background:#f5f5ef;color:#20312b}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:white;padding:24px;border:1px solid #ddd}</style><h1>Reproducible evaluation</h1><p>Offline checks and online model measurements are reported separately. Public replay evaluates diagnosis only; local repair results use real HTTP probes.</p><pre>{
+  &quot;before&quot;: {
+    &quot;local&quot;: {
+      &quot;reliable&quot;: {
+        &quot;n_runs&quot;: 6,
+        &quot;n_unique_cases&quot;: 3,
+        &quot;service_ac_at_1&quot;: 1.0,
+        &quot;wilson_95_run_level&quot;: [
+          0.6097,
+          1.0
+        ],
+        &quot;accepted_correct_rate&quot;: 1.0,
+        &quot;failures&quot;: 0,
+        &quot;mean_tool_attempts&quot;: 10.666666666666666,
+        &quot;mean_model_calls&quot;: 6.166666666666667,
+        &quot;mean_elapsed_seconds&quot;: 9.937833333333334,
+        &quot;review_rejection_rate&quot;: 0.0,
+        &quot;verified_repair_rate&quot;: 1.0,
+        &quot;unknown_response_recovered&quot;: 6,
+        &quot;duplicate_repair_events&quot;: 0
+      },
+      &quot;dual&quot;: {
+        &quot;n_runs&quot;: 6,
+        &quot;n_unique_cases&quot;: 3,
+        &quot;service_ac_at_1&quot;: 0.16666666666666666,
+        &quot;wilson_95_run_level&quot;: [
+          0.0301,
+          0.5635
+        ],
+        &quot;accepted_correct_rate&quot;: 0.16666666666666666,
+        &quot;failures&quot;: 5,
+        &quot;mean_tool_attempts&quot;: 15.166666666666666,
+        &quot;mean_model_calls&quot;: 10.666666666666666,
+        &quot;mean_elapsed_seconds&quot;: 14.596166666666667,
+        &quot;review_rejection_rate&quot;: 0.0,
+        &quot;verified_repair_rate&quot;: 0.16666666666666666,
+        &quot;unknown_response_recovered&quot;: 1,
+        &quot;duplicate_repair_events&quot;: 0
+      }
+    },
+    &quot;public&quot;: {
+      &quot;reliable&quot;: {
+        &quot;n_runs&quot;: 24,
+        &quot;n_unique_cases&quot;: 12,
+        &quot;service_ac_at_1&quot;: 0.20833333333333334,
+        &quot;wilson_95_run_level&quot;: [
+          0.0924,
+          0.4047
+        ],
+        &quot;accepted_correct_rate&quot;: 0.20833333333333334,
+        &quot;failures&quot;: 17,
+        &quot;mean_tool_attempts&quot;: 15.416666666666666,
+        &quot;mean_model_calls&quot;: 7.833333333333333,
+        &quot;mean_elapsed_seconds&quot;: 9.278708333333334,
+        &quot;review_rejection_rate&quot;: 0.0
+      },
+      &quot;dual&quot;: {
+        &quot;n_runs&quot;: 24,
+        &quot;n_unique_cases&quot;: 12,
+        &quot;service_ac_at_1&quot;: 0.125,
+        &quot;wilson_95_run_level&quot;: [
+          0.0434,
+          0.31
+        ],
+        &quot;accepted_correct_rate&quot;: 0.125,
+        &quot;failures&quot;: 19,
+        &quot;mean_tool_attempts&quot;: 17.583333333333332,
+        &quot;mean_model_calls&quot;: 8.791666666666666,
+        &quot;mean_elapsed_seconds&quot;: 10.901041666666666,
+        &quot;review_rejection_rate&quot;: 0.0
+      }
+    },
+    &quot;weighted_diagnosis&quot;: {
+      &quot;dual&quot;: 0.15,
+      &quot;reliable&quot;: 0.6833333333333333
+    }
+  },
+  &quot;after&quot;: {
+    &quot;local&quot;: {
+      &quot;reliable&quot;: {
+        &quot;n_runs&quot;: 6,
+        &quot;n_unique_cases&quot;: 3,
+        &quot;service_ac_at_1&quot;: 1.0,
+        &quot;wilson_95_run_level&quot;: [
+          0.6097,
+          1.0
+        ],
+        &quot;accepted_correct_rate&quot;: 1.0,
+        &quot;failures&quot;: 0,
+        &quot;mean_tool_attempts&quot;: 11.333333333333334,
+        &quot;mean_model_calls&quot;: 6.5,
+        &quot;mean_elapsed_seconds&quot;: 9.695333333333334,
+        &quot;review_rejection_rate&quot;: 0.0,
+        &quot;verified_repair_rate&quot;: 1.0,
+        &quot;unknown_response_recovered&quot;: 6,
+        &quot;duplicate_repair_events&quot;: 0
+      },
+      &quot;dual&quot;: {
+        &quot;n_runs&quot;: 6,
+        &quot;n_unique_cases&quot;: 3,
+        &quot;service_ac_at_1&quot;: 1.0,
+        &quot;wilson_95_run_level&quot;: [
+          0.6097,
+          1.0
+        ],
+        &quot;accepted_correct_rate&quot;: 1.0,
+        &quot;failures&quot;: 0,
+        &quot;mean_tool_attempts&quot;: 14.5,
+        &quot;mean_model_calls&quot;: 9.666666666666666,
+        &quot;mean_elapsed_seconds&quot;: 13.935,
+        &quot;review_rejection_rate&quot;: 0.0,
+        &quot;verified_repair_rate&quot;: 1.0,
+        &quot;unknown_response_recovered&quot;: 6,
+        &quot;duplicate_repair_events&quot;: 0
+      }
+    },
+    &quot;public&quot;: {
+      &quot;reliable&quot;: {
+        &quot;n_runs&quot;: 24,
+        &quot;n_unique_cases&quot;: 12,
+        &quot;service_ac_at_1&quot;: 1.0,
+        &quot;wilson_95_run_level&quot;: [
+          0.862,
+          1
+        ],
+        &quot;accepted_correct_rate&quot;: 1.0,
+        &quot;failures&quot;: 0,
+        &quot;mean_tool_attempts&quot;: 10.166666666666666,
+        &quot;mean_model_calls&quot;: 6.541666666666667,
+        &quot;mean_elapsed_seconds&quot;: 7.640125,
+        &quot;review_rejection_rate&quot;: 0.0
+      },
+      &quot;dual&quot;: {
+        &quot;n_runs&quot;: 24,
+        &quot;n_unique_cases&quot;: 12,
+        &quot;service_ac_at_1&quot;: 1.0,
+        &quot;wilson_95_run_level&quot;: [
+          0.862,
+          1
+        ],
+        &quot;accepted_correct_rate&quot;: 1.0,
+        &quot;failures&quot;: 0,
+        &quot;mean_tool_attempts&quot;: 14.083333333333334,
+        &quot;mean_model_calls&quot;: 9.75,
+        &quot;mean_elapsed_seconds&quot;: 12.348208333333334,
+        &quot;review_rejection_rate&quot;: 0.0
+      }
+    },
+    &quot;weighted_diagnosis&quot;: {
+      &quot;dual&quot;: 1.0,
+      &quot;reliable&quot;: 1.0
+    }
+  },
+  &quot;pilot&quot;: {
+    &quot;acceptance&quot;: &quot;passed&quot;,
+    &quot;clean_post_fault_hours&quot;: 100.274
+  }
+}</pre>

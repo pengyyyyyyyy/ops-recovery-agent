@@ -1,0 +1,11 @@
+POSTGRES_FAULT_BEGIN=2026-11-19T16:32:49+08:00
+DB_ESCALATION={"session": "41a7bb0a2f854e84a6ae83dd0d129af4", "phase": "diagnosed", "service": "postgres", "action": "none", "approval_required": false}
+POSTGRES_RESTORED_ALERT_CLOSED=2026-11-19T16:33:26+08:00
+DEPENDENCY_STALL_BEGIN=2026-11-19T16:33:26+08:00
+DEPENDENCY_ESCALATION={"session": "39894b8c18e5428b8b0846de1f401868", "service": "postgres", "action": "none", "cause": "dependency_timeout"}
+DEPENDENCY_STALL_CLOSED=2026-11-19T16:34:23+08:00
+UMAMI_FAULT_BEGIN=2026-11-19T16:34:23+08:00
+UMAMI_PROPOSAL={"session": "555c0294a39b492bab723dc3b051328e", "run": "d9cfe58ae04a4a5ea9bf922161b9e49e", "digest": "5e4ea85bf79620a10ceb923f6663f3ba3d17ba01acf834db1b23071d0800b178", "target": "umami", "action": "restart_umami", "evidence_ids": ["pilot-0e4c4a4002e9fbaefdad"]}
+FALLBACK_UNIT=ops-pilot-acceptance-app-1795077169.timer
+FALLBACK_ACTIVE=active
+CLOUD_ESCALATION_AND_PROPOSAL_OK
