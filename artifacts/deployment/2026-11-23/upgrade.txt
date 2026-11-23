@@ -1,0 +1,17 @@
+active
+active
+active
+STATE_BACKUP=OK
+BEFORE_COUNTS={"incidents": 6, "probe_history": 6139, "runs": 6}
+SOURCE_VERSION=0.2.1
+DEPLOYED_VERSION=0.2.1
+active
+active
+active
+POST_UPGRADE_BUSINESS_PROBE={'probes': [{'duration_ms': 332, 'status': 200}, {'duration_ms': 368, 'status': 200}, {'duration_ms': 310, 'status': 200}]}
+READ_ONLY_TURN_1=rejected
+READ_ONLY_TURN_2=rejected
+DURABLE_FOLLOWUP=PASS
+AFTER_COUNTS={"incidents": 7, "probe_history": 6140, "runs": 8}
+HISTORICAL_STATE_PRESERVED=PASS
+UPGRADE_ACCEPTED release=0.2.1-371902eb commit=371902eb0730f9ad0e41971ef640cada25d61698

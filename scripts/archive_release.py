@@ -195,6 +195,8 @@ def main():
         },
     }
     render_evaluation(overview, args.output / "report.html")
+    # Preserve hashed evidence bytes on checkout on both Windows and Linux.
+    (args.output / ".gitattributes").write_bytes(b"** -text\n")
     secret = settings.api_key
     manifest = []
     for file in sorted(args.output.rglob("*")):
